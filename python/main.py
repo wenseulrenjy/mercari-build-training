@@ -8,6 +8,7 @@ import sqlite3
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 import json
+from typing import List
 
 
 # Define the path to the images & sqlite3 database
@@ -65,6 +66,9 @@ def hello():
 class AddItemResponse(BaseModel):
     message: str
 
+class GetItemResponse(BaseModel):
+    items: List
+
 
 # add_item is a handler to add a new item for POST /items .
 @app.post("/items", response_model=AddItemResponse)
@@ -79,9 +83,16 @@ def add_item(
     insert_item(Item(name=name, category=category))
     return AddItemResponse(**{"message": f"item received: {name}"})
 
+# STEP 4-3 
+@app.get("/items", response_model=GetItemResponse)
+def get_item():
+    with open('items.json') as f:
+        items = json.load(f)
+    return items 
 
 # get_image is a handler to return an image for GET /images/{filename} .
 @app.get("/image/{image_name}")
+
 async def get_image(image_name):
     # Create image path
     image = images / image_name
