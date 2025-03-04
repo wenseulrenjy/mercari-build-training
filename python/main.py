@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
+import json
 
 
 # Define the path to the images & sqlite3 database
@@ -102,4 +103,17 @@ class Item(BaseModel):
 
 def insert_item(item: Item):
     # STEP 4-1: add an implementation to store an item
-    pass
+    file_path = "items.json"
+    data = {"items": []}
+
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            try:
+                data = json.load(f) #JSONをPythonのオブジェクトとして読み込む。
+            except json.JSONDecodeError:
+                pass 
+
+    data["items"].append({"name": item.name, "category": item.category})
+    
+    with open("items.json", "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False , indent=2)
