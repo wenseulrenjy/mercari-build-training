@@ -82,9 +82,7 @@ def add_item(
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
     
-    #バイナリデータを作成
-    image_binary = image.read()
-    image_name = hashlib.sha256(image_binary).hexdigest()
+    image_name=hash_and_rename_image(image)
 
     insert_item(Item(name=name, category=category, image_name=image_name))
     return AddItemResponse(**{"message": f"item received: {name}"})
@@ -112,6 +110,19 @@ async def get_image(image_name):
 
     return FileResponse(image)
 
+async def hash_and_rename_image(image: UploadFile):
+    image_binary = await image.read()
+    
+    # SHA-256 ハッシュを計算
+    hash_value = hashlib.sha256(image_binary).hexdigest()
+    
+    # 新しいファイル名を生成
+    image_name = f"{hash_value}.jpg"
+    
+    # ファイルをリネーム
+    os.rename(image_binary, image_name)
+    
+    return image_name
 
 class Item(BaseModel):
     name: str
