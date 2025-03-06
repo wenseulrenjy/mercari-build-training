@@ -1,7 +1,7 @@
 import os
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException, Depends
+from fastapi import FastAPI, Form, HTTPException, Depends, File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from contextlib import asynccontextmanager
 import json
 from typing import List
+import hashlib
 
 
 # Define the path to the images & sqlite3 database
@@ -75,12 +76,17 @@ class GetItemResponse(BaseModel):
 def add_item(
     name: str = Form(...),
     category: str = Form(...),
+    image: UploadFile = File(...),  
     db: sqlite3.Connection = Depends(get_db),
 ):
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
+    
+    #バイナリデータを作成
+    image_binary = image.read()
+    image_name = hashlib.sha256(image_binary).hexdigest()
 
-    insert_item(Item(name=name, category=category))
+    insert_item(Item(name=name, category=category, image_name=image_name))
     return AddItemResponse(**{"message": f"item received: {name}"})
 
 # STEP 4-3 
@@ -110,6 +116,7 @@ async def get_image(image_name):
 class Item(BaseModel):
     name: str
     category: str
+    image_name: str
 
 
 def insert_item(item: Item):
@@ -124,7 +131,7 @@ def insert_item(item: Item):
             except json.JSONDecodeError:
                 pass 
 
-    data["items"].append({"name": item.name, "category": item.category})
+    data["items"].append({"name": item.name, "category": item.category,"image_name": item.image_name})
     
     with open("items.json", "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False , indent=2)
