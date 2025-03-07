@@ -70,6 +70,10 @@ class AddItemResponse(BaseModel):
 class GetItemResponse(BaseModel):
     items: List
 
+class Item(BaseModel):
+    name: str
+    category: str
+    image_name: str
 
 # add_item is a handler to add a new item for POST /items .
 @app.post("/items", response_model=AddItemResponse)
@@ -126,10 +130,15 @@ async def hash_and_rename_image(image: UploadFile):
     
     return image_name
 
-class Item(BaseModel):
-    name: str
-    category: str
-    image_name: str
+@app.get("/items/{item_id}", response_model=Item)
+async def get_single_item(item_id: int ):
+    with open('items.json') as f:
+        items = json.load(f)
+    # 範囲チェック
+    if item_id <= 0 or item_id > len(items["items"]):
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    return items["items"][item_id - 1] 
 
 
 def insert_item(item: Item):
