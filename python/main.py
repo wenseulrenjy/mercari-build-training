@@ -73,7 +73,7 @@ class GetItemResponse(BaseModel):
 
 # add_item is a handler to add a new item for POST /items .
 @app.post("/items", response_model=AddItemResponse)
-def add_item(
+async def add_item(
     name: str = Form(...),
     category: str = Form(...),
     image: UploadFile = File(...),  
@@ -82,10 +82,10 @@ def add_item(
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
     
-    image_name=hash_and_rename_image(image)
+    image_name= await hash_and_rename_image(image)
 
     insert_item(Item(name=name, category=category, image_name=image_name))
-    return AddItemResponse(**{"message": f"item received: {name}"})
+    return AddItemResponse(**{"message": f"item received: {name}{category}{image_name}"})
 
 # STEP 4-3 
 @app.get("/items", response_model=GetItemResponse)
@@ -120,7 +120,9 @@ async def hash_and_rename_image(image: UploadFile):
     image_name = f"{hash_value}.jpg"
     
     # ファイルをリネーム
-    os.rename(image_binary, image_name)
+    image_path = images / image_name
+    with open(image_path, "wb") as f:
+        f.write(image_binary)
     
     return image_name
 
