@@ -109,7 +109,7 @@ async def add_item(
 def get_item(db : sqlite3.Connection):
     cursor = db.cursor()
     
-    query = """SELAECT name, category_id, image_name FROM items;"""
+    query = """SELECT name, category_id, image_name FROM items;"""
     
     cursor.execute(query)
 
@@ -159,7 +159,7 @@ async def hash_and_rename_image(image: UploadFile):
 async def get_single_item(item_id: int , db : sqlite3.Connection ):
     cursor = db.cursor()
     
-    query = """SELAECT name, category, image_name FROM items;"""
+    query = """SELECT name, category, image_name FROM items;"""
     
     cursor.execute(query)
 
@@ -189,3 +189,24 @@ def insert_item(item: Item , db:sqlite3.Connection):
     cursor.close()
     #新しいrowのid
     return cursor.lastrowid
+
+@app.get("/search", response_model=GetItemResponse)
+def get_item(db : sqlite3.Connection, keyword : str):
+    keyword = keyword
+
+    cursor = db.cursor()
+    
+    query = """SELECT * FROM Customers
+    WHERE name LIKE ?;"""
+    
+    cursor.execute(query, ('%'+ keyword + '%',))
+
+    rows = cursor.fetchall()
+    items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
+    result = {"items": items_list}
+
+    db.commit()
+
+    cursor.close()
+    
+    return result 
