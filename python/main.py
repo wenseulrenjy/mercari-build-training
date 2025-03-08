@@ -92,11 +92,8 @@ class Item(BaseModel):
 @app.post("/items", response_model=AddItemResponse)
 async def add_item(
     name: str = Form(...),
-<<<<<<<<< Temporary merge branch 1
-=========
     category: str = Form(...),
     image: UploadFile = File(...),  
->>>>>>>>> Temporary merge branch 2
     db: sqlite3.Connection = Depends(get_db),
 ):
     if not name:
@@ -104,20 +101,15 @@ async def add_item(
     
     image_name= await hash_and_rename_image(image)
 
-<<<<<<<<< Temporary merge branch 1
-    insert_item(Item(name=name))
-    return AddItemResponse(**{"message": f"item received: {name}"})
-=========
     insert_item(Item(name=name, category=category, image_name=image_name))
     return AddItemResponse(**{"message": f"item received: {name}{category}{image_name}"})
->>>>>>>>> Temporary merge branch 2
 
 # STEP 4-3 
 @app.get("/items", response_model=GetItemResponse)
 def get_item(db : sqlite3.Connection):
     cursor = db.cursor()
     
-    query = """ELECT name, categories.name AS category, image_name FROM items
+    query = """SELECT name, categories.name AS category, image_name FROM items
     INNER JOIN categories; ON items.category_id = categories.id;"""
     
     cursor.execute(query)
@@ -164,10 +156,6 @@ async def hash_and_rename_image(image: UploadFile):
     
     return image_name
 
-<<<<<<<<< Temporary merge branch 1
-class Item(BaseModel):
-    name: str
-=========
 @app.get("/items/{item_id}", response_model=Item)
 async def get_single_item(item_id: int , db : sqlite3.Connection ):
     cursor = db.cursor()
