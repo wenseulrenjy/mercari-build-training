@@ -15,6 +15,7 @@ import hashlib
 # Define the path to the images & sqlite3 database
 images = pathlib.Path(__file__).parent.resolve() / "images"
 db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
+sql_path=pathlib.Path(__file__).parent.resolve() / "db" / "items.sql"
 
 
 def get_db():
@@ -31,7 +32,19 @@ def get_db():
 
 # STEP 5-1: set up the database connection
 def setup_database():
-    pass
+    # データベースに接続して、ファイルがなければ新しく作る
+    conn = sqlite3.connect(db)
+    cursor = conn.cursor()
+
+    # schema.sqlを開いてSQLコマンドを実行
+    with open(sql_path, "r", encoding="utf-8") as file:
+        sql_script = file.read()
+        cursor.executescript(sql_script)
+
+    # 変更を保存して接続を閉じる
+    conn.commit()
+    conn.close()
+
 
 
 @asynccontextmanager
@@ -93,10 +106,22 @@ async def add_item(
 
 # STEP 4-3 
 @app.get("/items", response_model=GetItemResponse)
-def get_item():
-    with open('items.json') as f:
-        items = json.load(f)
-    return items 
+def get_item(db : sqlite3.Connection):
+    cursor = db.cursor()
+    
+    query = """SELAECT name, category_id, image_name FROM items;"""
+    
+    cursor.execute(query)
+
+    rows = cursor.fetchall()
+    items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
+    result = {"items": items_list}
+
+    db.commit()
+
+    cursor.close()
+    
+    return result 
 
 # get_image is a handler to return an image for GET /images/{filename} .
 @app.get("/image/{image_name}")
@@ -131,29 +156,36 @@ async def hash_and_rename_image(image: UploadFile):
     return image_name
 
 @app.get("/items/{item_id}", response_model=Item)
-async def get_single_item(item_id: int ):
-    with open('items.json') as f:
-        items = json.load(f)
-    # 範囲チェック
-    if item_id <= 0 or item_id > len(items["items"]):
+async def get_single_item(item_id: int , db : sqlite3.Connection ):
+    cursor = db.cursor()
+    
+    query = """SELAECT name, category, image_name FROM items;"""
+    
+    cursor.execute(query)
+
+    rows = cursor.fetchall()
+    items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
+
+    #範囲チェック
+    if item_id <= 0 or item_id > len(items_list):
         raise HTTPException(status_code=404, detail="Item not found")
     
-    return items["items"][item_id - 1] 
+    result = {"items":items_list(item_id - 1)} 
 
+    db.commit()
 
-def insert_item(item: Item):
-    # STEP 4-1: add an implementation to store an item
-    file_path = "items.json"
-    data = {"items": []}
-
-    if os.path.exists(file_path):
-        with open(file_path, "r", encoding="utf-8") as f:
-            try:
-                data = json.load(f) #JSONをPythonのオブジェクトとして読み込む。
-            except json.JSONDecodeError:
-                pass 
-
-    data["items"].append({"name": item.name, "category": item.category,"image_name": item.image_name})
+    cursor.close()
     
-    with open("items.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False , indent=2)
+    return result  
+
+def insert_item(item: Item , db:sqlite3.Connection):
+    cursor = db.cursor()
+    query = """INSERT INTO items (name, category, image_name) VALUES (?,?,? );""" #?はセキュリティのため　または{item.name}...
+    
+    cursor.execute(query, (item.name, item.category, item.image_name))
+
+    db.commit()
+
+    cursor.close()
+    #新しいrowのid
+    return cursor.lastrowid
