@@ -109,7 +109,8 @@ async def add_item(
 def get_item(db : sqlite3.Connection):
     cursor = db.cursor()
     
-    query = """SELECT name, category_id, image_name FROM items;"""
+    query = """ELECT name, categories.name AS category, image_name FROM items
+    INNER JOIN categories; ON items.category_id = categories.id;"""
     
     cursor.execute(query)
 
@@ -159,7 +160,8 @@ async def hash_and_rename_image(image: UploadFile):
 async def get_single_item(item_id: int , db : sqlite3.Connection ):
     cursor = db.cursor()
     
-    query = """SELECT name, category, image_name FROM items;"""
+    query = """SELECT name, categories.name AS category, image_name FROM items
+    INNER JOIN categories; ON items.category_id = categories.id;"""
     
     cursor.execute(query)
 
