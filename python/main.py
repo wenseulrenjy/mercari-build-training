@@ -1,12 +1,15 @@
 import os
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException, Depends
+from fastapi import FastAPI, Form, HTTPException, Depends, File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
+import json
+from typing import List
+import hashlib
 
 
 # Define the path to the images & sqlite3 database
@@ -64,22 +67,40 @@ def hello():
 class AddItemResponse(BaseModel):
     message: str
 
+class GetItemResponse(BaseModel):
+    items: List
+
+class Item(BaseModel):
+    name: str
+    category: str
+    image_name: str
 
 # add_item is a handler to add a new item for POST /items .
 @app.post("/items", response_model=AddItemResponse)
-def add_item(
+async def add_item(
     name: str = Form(...),
+    category: str = Form(...),
+    image: UploadFile = File(...),  
     db: sqlite3.Connection = Depends(get_db),
 ):
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
+    
+    image_name= await hash_and_rename_image(image)
 
-    insert_item(Item(name=name))
-    return AddItemResponse(**{"message": f"item received: {name}"})
+    insert_item(Item(name=name, category=category, image_name=image_name))
+    return AddItemResponse(**{"message": f"item received: {name}{category}{image_name}"})
 
+# STEP 4-3 
+@app.get("/items", response_model=GetItemResponse)
+def get_item():
+    with open('items.json') as f:
+        items = json.load(f)
+    return items 
 
 # get_image is a handler to return an image for GET /images/{filename} .
 @app.get("/image/{image_name}")
+
 async def get_image(image_name):
     # Create image path
     image = images / image_name
@@ -93,11 +114,46 @@ async def get_image(image_name):
 
     return FileResponse(image)
 
+async def hash_and_rename_image(image: UploadFile):
+    image_binary = await image.read()
+    
+    # SHA-256 ハッシュを計算
+    hash_value = hashlib.sha256(image_binary).hexdigest()
+    
+    # 新しいファイル名を生成
+    image_name = f"{hash_value}.jpg"
+    
+    # ファイルをリネーム
+    image_path = images / image_name
+    with open(image_path, "wb") as f:
+        f.write(image_binary)
+    
+    return image_name
 
-class Item(BaseModel):
-    name: str
+@app.get("/items/{item_id}", response_model=Item)
+async def get_single_item(item_id: int ):
+    with open('items.json') as f:
+        items = json.load(f)
+    # 範囲チェック
+    if item_id <= 0 or item_id > len(items["items"]):
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    return items["items"][item_id - 1] 
 
 
 def insert_item(item: Item):
     # STEP 4-1: add an implementation to store an item
-    pass
+    file_path = "items.json"
+    data = {"items": []}
+
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            try:
+                data = json.load(f) #JSONをPythonのオブジェクトとして読み込む。
+            except json.JSONDecodeError:
+                pass 
+
+    data["items"].append({"name": item.name, "category": item.category,"image_name": item.image_name})
+    
+    with open("items.json", "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False , indent=2)
