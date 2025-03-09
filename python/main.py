@@ -182,9 +182,22 @@ async def get_single_item(item_id: int , db : sqlite3.Connection ):
 
 def insert_item(item: Item , db:sqlite3.Connection):
     cursor = db.cursor()
-    query = """INSERT INTO items (name, category, image_name) VALUES (?,?,? );""" #?はセキュリティのため　または{item.name}...
-    
-    cursor.execute(query, (item.name, item.category, item.image_name))
+    query_category ="""SELECT id AS category_id FROM categories WHERE categories.name LIKE ?;"""
+
+    cursor.execute(query_category)
+
+    row = cursor.fetchone()
+
+    if row == None:
+        query_insert = """INSERT INTO categories (name) VALUES (?);"""
+        cursor.execute(query_insert,(item.category))
+        category_id = cursor.lastrowid
+    else:
+        category_id = row[0] #id
+
+    query = """INSERT INTO items (name, category_id, image_name) VALUES (?,?,? );""" #?はセキュリティのため　または{item.name}...
+
+    cursor.execute(query, (item.name, category_id, item.image_name))
 
     db.commit()
 
@@ -198,8 +211,8 @@ def get_item(db : sqlite3.Connection, keyword : str):
 
     cursor = db.cursor()
     
-    query = """SELECT * FROM Customers
-    WHERE name LIKE ?;"""
+    query = """SELECT items.name AS name, categories.name AS category, image_name FROM items JOIN categories ON category_id = categories.id
+    WHERE items.name LIKE ?;"""
     
     cursor.execute(query, ('%'+ keyword + '%',))
 
