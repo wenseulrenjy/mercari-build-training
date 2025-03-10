@@ -110,15 +110,13 @@ def get_item(db : sqlite3.Connection):
     cursor = db.cursor()
     
     query = """SELECT name, categories.name AS category, image_name FROM items
-    INNER JOIN categories; ON items.category_id = categories.id;"""
+    INNER JOIN categories ON items.category_id = categories.id"""
     
     cursor.execute(query)
 
     rows = cursor.fetchall()
     items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
     result = {"items": items_list}
-
-    db.commit()
 
     cursor.close()
     
@@ -157,22 +155,22 @@ async def hash_and_rename_image(image: UploadFile):
     return image_name
 
 @app.get("/items/{item_id}", response_model=Item)
-async def get_single_item(item_id: int , db : sqlite3.Connection ):
+def get_single_item(item_id: int , db : sqlite3.Connection ):
     cursor = db.cursor()
     
-    query = """SELECT name, categories.name AS category, image_name FROM items
-    INNER JOIN categories; ON items.category_id = categories.id;"""
+    query = """
+            SELECT items.name, categories.name AS category, items.image_name
+            FROM items
+            INNER JOIN categories ON items.category_id = categories.id
+            WHERE items.id = ?
+            """
     
-    cursor.execute(query)
+    cursor.execute(query, (item_id,))
 
     rows = cursor.fetchall()
     items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
-
-    #範囲チェック
-    if item_id <= 0 or item_id > len(items_list):
-        raise HTTPException(status_code=404, detail="Item not found")
     
-    result = {"items":items_list(item_id - 1)} 
+    result = {"items":items_list} 
 
     db.commit()
 
@@ -184,12 +182,12 @@ def insert_item(item: Item , db:sqlite3.Connection):
     cursor = db.cursor()
     query_category ="""SELECT id AS category_id FROM categories WHERE categories.name LIKE ?;"""
 
-    cursor.execute(query_category)
+    cursor.execute(query_category, (item.category))
 
     row = cursor.fetchone()
 
     if row == None:
-        query_insert = """INSERT INTO categories (name) VALUES (?);"""
+        query_insert = """INSERT INTO categories (name) VALUES (?)"""
         cursor.execute(query_insert,(item.category))
         category_id = cursor.lastrowid
     else:
@@ -207,7 +205,6 @@ def insert_item(item: Item , db:sqlite3.Connection):
 
 @app.get("/search", response_model=GetItemResponse)
 def get_item(db : sqlite3.Connection, keyword : str):
-    keyword = keyword
 
     cursor = db.cursor()
     
