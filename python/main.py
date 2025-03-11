@@ -37,7 +37,7 @@ def setup_database():
     cursor = conn.cursor()
 
     # schema.sqlを開いてSQLコマンドを実行
-    with open(sql_path, "r", encoding="utf-8") as file:
+    with open(sql_path, "r") as file:
         sql_script = file.read()
         cursor.executescript(sql_script)
 
@@ -106,7 +106,7 @@ async def add_item(
 
 # STEP 4-3 
 @app.get("/items", response_model=GetItemResponse)
-def get_item(db : sqlite3.Connection):
+def get_item(db : sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
     
     query = """SELECT name, categories.name AS category, image_name FROM items
@@ -155,7 +155,7 @@ async def hash_and_rename_image(image: UploadFile):
     return image_name
 
 @app.get("/items/{item_id}", response_model=Item)
-def get_single_item(item_id: int , db : sqlite3.Connection ):
+def get_single_item(item_id: int , db : sqlite3.Connection = Depends(get_db) ):
     cursor = db.cursor()
     
     query = """
@@ -178,7 +178,7 @@ def get_single_item(item_id: int , db : sqlite3.Connection ):
     
     return result  
 
-def insert_item(item: Item , db:sqlite3.Connection):
+def insert_item(item: Item , db:sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
     query_category ="""SELECT id AS category_id FROM categories WHERE categories.name LIKE ?;"""
 
@@ -204,7 +204,7 @@ def insert_item(item: Item , db:sqlite3.Connection):
     return cursor.lastrowid
 
 @app.get("/search", response_model=GetItemResponse)
-def get_item(db : sqlite3.Connection, keyword : str):
+def get_item(keyword : str, db : sqlite3.Connection = Depends(get_db)):
 
     cursor = db.cursor()
     
