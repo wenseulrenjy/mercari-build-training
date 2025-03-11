@@ -38,8 +38,7 @@ def setup_database():
 
     # schema.sqlを開いてSQLコマンドを実行
     with open(sql_path, "r") as file:
-        sql_script = file.read()
-        cursor.executescript(sql_script)
+        cursor.executescript(file.read())
 
     # 変更を保存して接続を閉じる
     conn.commit()
