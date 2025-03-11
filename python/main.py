@@ -22,7 +22,7 @@ def get_db():
     if not db.exists():
         yield
 
-    conn = sqlite3.connect(db)
+    conn = sqlite3.connect(db, check_same_thread=False)
     conn.row_factory = sqlite3.Row  # Return rows as dictionaries
     try:
         yield conn
@@ -100,7 +100,28 @@ async def add_item(
     
     image_name= await hash_and_rename_image(image)
 
-    insert_item(Item(name=name, category=category, image_name=image_name))
+    cursor = db.cursor()
+    query_category ="""SELECT id AS category_id FROM categories WHERE categories.name LIKE ?"""
+
+    cursor.execute(query_category, (category,))
+
+    row = cursor.fetchone()
+
+    if row == None:
+        query_insert = """INSERT INTO categories (name) VALUES (?)"""
+        cursor.execute(query_insert,(category,))
+        category_id = cursor.lastrowid
+    else:
+        category_id = row[0] #id
+
+    query = """INSERT INTO items (name, category_id, image_name) VALUES (?,?,? )""" #?はセキュリティのため　または{item.name}...
+
+    cursor.execute(query, (name, category_id, image_name))
+
+    db.commit()
+
+    cursor.close()
+
     return AddItemResponse(**{"message": f"item received: {name}{category}{image_name}"})
 
 # STEP 4-3 
@@ -177,38 +198,13 @@ def get_single_item(item_id: int , db : sqlite3.Connection = Depends(get_db) ):
     
     return result  
 
-def insert_item(item: Item , db:sqlite3.Connection = Depends(get_db)):
-    cursor = db.cursor()
-    query_category ="""SELECT id AS category_id FROM categories WHERE categories.name LIKE ?;"""
-
-    cursor.execute(query_category, (item.category))
-
-    row = cursor.fetchone()
-
-    if row == None:
-        query_insert = """INSERT INTO categories (name) VALUES (?)"""
-        cursor.execute(query_insert,(item.category))
-        category_id = cursor.lastrowid
-    else:
-        category_id = row[0] #id
-
-    query = """INSERT INTO items (name, category_id, image_name) VALUES (?,?,? );""" #?はセキュリティのため　または{item.name}...
-
-    cursor.execute(query, (item.name, category_id, item.image_name))
-
-    db.commit()
-
-    cursor.close()
-    #新しいrowのid
-    return cursor.lastrowid
-
 @app.get("/search", response_model=GetItemResponse)
 def get_item(keyword : str, db : sqlite3.Connection = Depends(get_db)):
 
     cursor = db.cursor()
     
     query = """SELECT items.name AS name, categories.name AS category, image_name FROM items JOIN categories ON category_id = categories.id
-    WHERE items.name LIKE ?;"""
+    WHERE items.name LIKE ?"""
     
     cursor.execute(query, ('%'+ keyword + '%',))
 
