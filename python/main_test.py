@@ -30,6 +30,13 @@ def db_connection():
 	)"""
     )
     conn.commit()
+    cursor.execute(
+        """CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL
+    )"""
+    )
+    conn.commit()
     conn.row_factory = sqlite3.Row  # Return rows as dictionaries
 
     yield conn
