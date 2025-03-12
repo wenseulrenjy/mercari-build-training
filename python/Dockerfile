@@ -3,6 +3,10 @@ FROM python:3.8-slim-buster
 
 WORKDIR /app
 
+RUN addgroup -S mercari && adduser -S trainee -G mercari
+
+USER trainee
+
 RUN python -m venv .app/venv
 
 RUN source .app/venv/bin/activate
