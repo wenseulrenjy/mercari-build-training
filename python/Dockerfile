@@ -1,8 +1,18 @@
-FROM alpine
+# syntax=docker/dockerfile:1
+FROM python:3.8-slim-buster
 
-RUN addgroup -S mercari && adduser -S trainee -G mercari
-# RUN chown -R trainee:mercari /path/to/db
+WORKDIR /app
 
-USER trainee
+RUN python -m venv .app/venv
 
-CMD ["python", "-V"]
+RUN source .app/venv/bin/activate
+
+RUN pip install --upgrade pip setuptools wheel
+
+COPY  requirements.txt requirements.txt
+
+RUN pip3 install -r requirements.txt
+
+COPY . .
+
+CMD [ "uvicorn", "main:app" , "--reload", "--port 9000"]
