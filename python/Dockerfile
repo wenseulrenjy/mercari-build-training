@@ -17,4 +17,4 @@ RUN chown -R trainee:mercari ./images
 
 USER trainee
 
-CMD ["/app/venv/bin/uvicorn", "python.main:app","--host", "0.0.0.0", "--reload", "--port", "9000"]
+CMD ["/app/venv/bin/uvicorn", "main:app","--host", "0.0.0.0", "--reload", "--port", "9000"]
