@@ -12,8 +12,8 @@ RUN python3 -m venv /app/venv && \
 COPY . .
 
 RUN addgroup -S mercari && adduser -S trainee -G mercari
-RUN chown -R trainee:mercari /app/python/db
-RUN chown -R trainee:mercari /app/python/images
+RUN chown -R trainee:mercari ./db
+RUN chown -R trainee:mercari ./images
 
 USER trainee
 
