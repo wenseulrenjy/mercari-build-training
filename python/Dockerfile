@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
-FROM alpine
+FROM alpine:latest
 
-RUN apk add --no-cache python3 py3-pip
+RUN apk add --no-cache python3 py3-pip py3-virtualenv
 
 WORKDIR /app
 COPY ./requirements.txt requirements.txt
