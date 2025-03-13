@@ -6,7 +6,7 @@ RUN apk add --no-cache python3 py3-pip py3-virtualenv
 WORKDIR /app
 COPY ./requirements.txt requirements.txt
 RUN python3 -m venv /app/venv && \
-    . /app/venv/bin/activate && \
+    ./venv/bin/activate && \
     pip install -r requirements.txt
 
 COPY . .
@@ -17,4 +17,4 @@ RUN chown -R trainee:mercari ./images
 
 USER trainee
 
-CMD ["/app/venv/bin/uvicorn", "main:app","--host", "0.0.0.0", "--reload", "--port", "9000"]
+CMD ["/venv/bin/uvicorn", "main:app","--host", "0.0.0.0", "--reload", "--port", "9000"]
