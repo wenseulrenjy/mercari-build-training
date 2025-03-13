@@ -5,7 +5,7 @@ RUN apk add --no-cache python3 py3-pip py3-virtualenv
 
 WORKDIR /app
 COPY ./requirements.txt requirements.txt
-RUN python3 -m venv /app/venv && \
+RUN python3 -m venv ./venv && \
     ./venv/bin/activate && \
     pip install -r requirements.txt
 
