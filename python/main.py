@@ -143,7 +143,7 @@ def get_item(db : sqlite3.Connection = Depends(get_db)):
     return result 
 
 # get_image is a handler to return an image for GET /images/{filename} .
-@app.get("/image/{image_name}")
+@app.get("/images/{image_name}")
 
 async def get_image(image_name):
     # Create image path
