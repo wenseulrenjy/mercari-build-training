@@ -1,0 +1,22 @@
+services:
+  web:  
+    build: ./typescript/simple-mercari-web
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_FRONTEND_URL=http://localhost:3000
+    networks:
+      - mynetwork
+
+  app:  
+    build: ./python
+    ports:
+      - "9000:9000"
+    environment:
+      - VITE_BACKEND_URL=http://localhost:9000
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+    driver: bridge

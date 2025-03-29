@@ -129,7 +129,7 @@ async def add_item(
 def get_item(db : sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
     
-    query = """SELECT name, categories.name AS category, image_name FROM items
+    query = """SELECT items.name, categories.name AS category, image_name FROM items
     INNER JOIN categories ON items.category_id = categories.id"""
     
     cursor.execute(query)
