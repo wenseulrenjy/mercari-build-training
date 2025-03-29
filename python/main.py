@@ -129,7 +129,7 @@ async def add_item(
 def get_item(db : sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
     
-    query = """SELECT name, categories.name AS category, image_name FROM items
+    query = """SELECT items.name, categories.name AS category, image_name FROM items
     INNER JOIN categories ON items.category_id = categories.id"""
     
     cursor.execute(query)
@@ -143,7 +143,7 @@ def get_item(db : sqlite3.Connection = Depends(get_db)):
     return result 
 
 # get_image is a handler to return an image for GET /images/{filename} .
-@app.get("/image/{image_name}")
+@app.get("/images/{image_name}")
 
 async def get_image(image_name):
     # Create image path

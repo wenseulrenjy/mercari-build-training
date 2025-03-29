@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Item, fetchItems } from '~/api';
 
 const PLACEHOLDER_IMAGE = import.meta.env.VITE_FRONTEND_URL + '/logo192.png';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 interface Prop {
   reload: boolean;
@@ -29,12 +30,14 @@ export const ItemList = ({ reload, onLoadCompleted }: Prop) => {
   }, [reload, onLoadCompleted]);
 
   return (
-    <div>
+    <div className='ItemListContainer'>
       {items.map((item) => {
         return (
           <div key={item.id} className="ItemList">
-            {/* TODO: Task 2: Show item images */}
-            <img src={PLACEHOLDER_IMAGE} />
+            <img 
+            src={`${BACKEND_URL}/images/${item.image_name}`} 
+            alt={item.name} 
+            />
             <p>
               <span>Name: {item.name}</span>
               <br />
