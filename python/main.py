@@ -192,7 +192,7 @@ def get_single_item(item_id: int , db : sqlite3.Connection = Depends(get_db) ):
 
     cursor.close()
     
-    return rows  
+    return dict(rows)  
 
 @app.get("/search", response_model=GetItemResponse)
 def get_item(keyword : str, db : sqlite3.Connection = Depends(get_db)):
