@@ -83,6 +83,7 @@ class GetItemResponse(BaseModel):
     items: List
 
 class Item(BaseModel):
+    id:int
     name: str
     category: str
     image_name: str
@@ -129,13 +130,16 @@ async def add_item(
 def get_item(db : sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
     
-    query = """SELECT items.name, categories.name AS category, image_name FROM items
-    INNER JOIN categories ON items.category_id = categories.id"""
+    query = """
+            SELECT *
+            FROM items
+            """
     
     cursor.execute(query)
 
     rows = cursor.fetchall()
-    items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
+    #items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
+    items_list = [Item(id=row[0], name=row[1], category=row[2], image_name=row[3]) for row in rows]
     result = {"items": items_list}
 
     cursor.close()
@@ -186,13 +190,13 @@ def get_single_item(item_id: int , db : sqlite3.Connection = Depends(get_db) ):
     
     cursor.execute(query, (item_id,))
 
-    rows = cursor.fetchall()
+    row = cursor.fetchone()
 
     db.commit()
 
     cursor.close()
     
-    return dict(rows)  
+    return Item(id=row[0], name=row[1], category=row[2], image_name=row[3])
 
 @app.get("/search", response_model=GetItemResponse)
 def get_item(keyword : str, db : sqlite3.Connection = Depends(get_db)):
