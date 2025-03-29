@@ -179,24 +179,20 @@ def get_single_item(item_id: int , db : sqlite3.Connection = Depends(get_db) ):
     cursor = db.cursor()
     
     query = """
-            SELECT items.name, categories.name AS category, items.image_name
+            SELECT *
             FROM items
-            INNER JOIN categories ON items.category_id = categories.id
-            WHERE items.id = ?
+            WHERE id = ?
             """
     
     cursor.execute(query, (item_id,))
 
     rows = cursor.fetchall()
-    items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
-    
-    result = {"items":items_list} 
 
     db.commit()
 
     cursor.close()
     
-    return result  
+    return rows  
 
 @app.get("/search", response_model=GetItemResponse)
 def get_item(keyword : str, db : sqlite3.Connection = Depends(get_db)):
