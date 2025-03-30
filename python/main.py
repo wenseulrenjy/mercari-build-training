@@ -131,15 +131,16 @@ def get_item(db : sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
     
     query = """
-            SELECT *
+            SELECT items.id AS id, items.name AS name, categories.name AS category, items.image_name AS image_name
             FROM items
+            JOIN categories ON items.category_id = categories.id
             """
     
     cursor.execute(query)
 
     rows = cursor.fetchall()
     #items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
-    items_list = [Item(id=row[0], name=row[1], category=row[2], image_name=row[3]) for row in rows]
+    items_list = [Item(id=row['id'], name=row['name'], category=row['category'], image_name=row['image_name']) for row in rows]
     result = {"items": items_list}
 
     cursor.close()
