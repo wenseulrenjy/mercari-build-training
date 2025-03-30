@@ -183,10 +183,11 @@ def get_single_item(item_id: int , db : sqlite3.Connection = Depends(get_db) ):
     cursor = db.cursor()
     
     query = """
-            SELECT *
-            FROM items
-            WHERE id = ?
-            """
+        SELECT items.id, items.name, categories.name AS category_name, items.image_name
+        FROM items
+        JOIN categories ON items.category_id = categories.id
+        WHERE items.id = ?
+        """
     
     cursor.execute(query, (item_id,))
 
