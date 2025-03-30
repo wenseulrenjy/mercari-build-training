@@ -196,7 +196,7 @@ def get_single_item(item_id: int , db : sqlite3.Connection = Depends(get_db) ):
 
     cursor.close()
     
-    return Item(id=row[0], name=row[1], category=row[2], image_name=row[3])
+    return Item(id=row['id'], name=row['name'], category=row['category'], image_name=row['image_name'])
 
 @app.get("/search", response_model=GetItemResponse)
 def get_item(keyword : str, db : sqlite3.Connection = Depends(get_db)):
