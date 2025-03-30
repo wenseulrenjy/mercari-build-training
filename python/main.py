@@ -83,6 +83,7 @@ class GetItemResponse(BaseModel):
     items: List
 
 class Item(BaseModel):
+    id:int
     name: str
     category: str
     image_name: str
@@ -129,13 +130,17 @@ async def add_item(
 def get_item(db : sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
     
-    query = """SELECT items.name, categories.name AS category, image_name FROM items
-    INNER JOIN categories ON items.category_id = categories.id"""
+    query = """
+            SELECT items.id AS id, items.name AS name, categories.name AS category, items.image_name AS image_name
+            FROM items
+            JOIN categories ON items.category_id = categories.id
+            """
     
     cursor.execute(query)
 
     rows = cursor.fetchall()
-    items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
+    #items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
+    items_list = [Item(id=row['id'], name=row['name'], category=row['category'], image_name=row['image_name']) for row in rows]
     result = {"items": items_list}
 
     cursor.close()
@@ -179,24 +184,21 @@ def get_single_item(item_id: int , db : sqlite3.Connection = Depends(get_db) ):
     cursor = db.cursor()
     
     query = """
-            SELECT items.name, categories.name AS category, items.image_name
-            FROM items
-            INNER JOIN categories ON items.category_id = categories.id
-            WHERE items.id = ?
-            """
+        SELECT items.id AS id, items.name AS name, categories.name AS category, items.image_name AS image_name
+        FROM items
+        JOIN categories ON items.category_id = categories.id
+        WHERE items.id = ?
+        """
     
     cursor.execute(query, (item_id,))
 
-    rows = cursor.fetchall()
-    items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
-    
-    result = {"items":items_list} 
+    row = cursor.fetchone()
 
     db.commit()
 
     cursor.close()
     
-    return result  
+    return Item(id=row['id'], name=row['name'], category=row['category'], image_name=row['image_name'])
 
 @app.get("/search", response_model=GetItemResponse)
 def get_item(keyword : str, db : sqlite3.Connection = Depends(get_db)):
